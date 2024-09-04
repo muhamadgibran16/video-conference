@@ -1,5 +1,5 @@
-# Use Node.js base image version 16
-FROM node:16-slim
+# Use Node.js base image version 18
+FROM node:18-alphine
 
 # Set the working directory in the container
 WORKDIR /app
