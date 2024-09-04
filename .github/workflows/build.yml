@@ -30,6 +30,10 @@ jobs:
       - name: 'Set up Cloud SDK'
         uses: 'google-github-actions/setup-gcloud@v2'
 
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+
       - name: Enable necessary APIs
         run: |
           gcloud services enable artifactregistry.googleapis.com
@@ -56,10 +60,10 @@ jobs:
         run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev --quiet
 
       - name: Build Docker Image
-        #run: docker buildx build --platform linux/amd64,linux/arm64 -t $IMAGE_NAME .
         run: |
             echo "Building image: $IMAGE_NAME"
-            docker build -t $IMAGE_NAME .
+            docker buildx build --platform linux/amd64,linux/arm64 -t $IMAGE_NAME .
+            #docker build -t $IMAGE_NAME .
 
       - name: Push Docker Image to Artifact Registry
         run: docker push $IMAGE_NAME
