@@ -1,0 +1,21 @@
+{
+  "name": "video-conference",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node app.js",
+    "start:dev": "nodemon app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bootstrap-icons": "^1.10.5",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.4.0",
+    "puppeteer": "^21.2.1",
+    "socket.io": "^4.7.2"
+  }
+}

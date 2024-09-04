@@ -1,0 +1,143 @@
+name: video-conference
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  
+  deploy:
+    name: Deploy to Cloud Run
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_NAME: asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.APPLICATION }}:latest
+      DB_IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/mongo
+      GCP_APP_NAME: ${{ secrets.APPLICATION }}
+      GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+      CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+
+      - name: Login to Google Cloud
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
+
+      - name: Enable necessary APIs
+        run: |
+          gcloud services enable artifactregistry.googleapis.com
+          gcloud services enable run.googleapis.com
+
+      - name: Check if Artifact Registry repository exists
+        id: check_repo
+        run: |
+          if gcloud artifacts repositories describe ${{ env.GCP_APP_NAME }} --location=asia-southeast2 &>/dev/null; then
+            echo "::set-output name=repo_exists::true"
+          else
+            echo "::set-output name=repo_exists::false"
+          fi
+
+      - name: Create Artifact Registry repository
+        if: steps.check_repo.outputs.repo_exists == 'false'
+        run: |
+          gcloud artifacts repositories create ${{ env.GCP_APP_NAME }} \
+            --repository-format=docker \
+            --location=asia-southeast2 \
+            --description="Docker repository for ${{ env.GCP_APP_NAME }}"
+
+      - name: Configure Docker Authorization
+        run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev --quiet
+
+      - name: Build Docker Image
+        run: docker build -t $IMAGE_NAME .
+
+      - name: Push Docker Image to Artifact Registry
+        run: docker push $IMAGE_NAME
+
+      - name: Prepare environment variables
+        run: |
+          cat << EOF > env_vars.yaml
+
+          EOF
+
+      - name: Debug - Check env_vars.yaml content
+        run: cat env_vars.yaml
+
+      - name: Deploy Docker Image to Google Cloud Run
+        run: |
+          gcloud run deploy ${{ secrets.APPLICATION }} \
+            --image $IMAGE_NAME \
+            --region asia-southeast2 \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 5000 \
+            --env-vars-file env_vars.yaml \
+            --verbosity=debug
+
+      - name: Debug - Check deployment status
+        if: failure()
+        run: |
+          gcloud run services describe ${{ secrets.APPLICATION }} \
+            --region asia-southeast2 \
+            --format='yaml(status)'
+
+      - name: Debug - Check recent logs
+        if: failure()
+        run: |
+          gcloud run services logs read --service=${{ secrets.APPLICATION }} \
+            --region=asia-southeast2
+
+
+#name: video-conference
+
+#on:
+#  push:
+#    branches: [master]
+#  pull_request:
+#    branches: [master]
+
+#jobs:
+#  deploy:
+#    name: Setup Gcloud Account
+#    runs-on: ubuntu-latest
+#    env:
+#      IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.APPLICATION }}
+#      DB_IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/mongo
+
+#    steps:
+#      - name: Login to Google Cloud
+#        uses: google-github-actions/setup-gcloud@v0
+#        with:
+#          project_id: ${{ secrets.GCP_PROJECT_ID }}
+#          service_account_email: ${{ secrets.GCP_EMAIL }}
+#          service_account_key: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
+#          export_default_credentials: true
+          
+#      - name: Configure Docker Authorization
+#        run: gcloud auth configure-docker --quiet
+
+#      - name: Checkout Repository
+#        uses: actions/checkout@v2
+
+#      - name: Build Docker Image
+#        run: docker build -t $IMAGE_NAME .
+
+#      - name: Push Docker Image to Container Registry
+#        run: docker push $IMAGE_NAME
+
+#      - name: Deploy Docker Image to Google Cloud Run
+#        run: |
+#            gcloud run deploy ${{ secrets.APPLICATION }} \
+#              --image $IMAGE_NAME \
+#              --platform managed \
+#              --region asia-southeast2 \
+#              --allow-unauthenticated \
+#              --port 8080 \
