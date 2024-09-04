@@ -57,8 +57,8 @@ jobs:
         run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev --quiet
 
       - name: Build Docker Image
-        run: docker buildx build --platform linux/amd64,linux/arm64 -t myimage:latest .
-        #run: docker build -t $IMAGE_NAME .
+        run: docker build -t $IMAGE_NAME .
+        #run: docker buildx build --platform linux/amd64,linux/arm64 -t myimage:latest .
 
       - name: Push Docker Image to Artifact Registry
         run: docker push $IMAGE_NAME
@@ -66,7 +66,6 @@ jobs:
       - name: Prepare environment variables
         run: |
           cat << EOF > env_vars.yaml
-
           EOF
 
       - name: Debug - Check env_vars.yaml content
@@ -83,18 +82,18 @@ jobs:
             --env-vars-file env_vars.yaml \
             --verbosity=debug
 
-      - name: Debug - Check deployment status
-        if: failure()
-        run: |
-          gcloud run services describe ${{ secrets.APPLICATION }} \
-            --region asia-southeast2 \
-            --format='yaml(status)'
+      #- name: Debug - Check deployment status
+      #  if: failure()
+      #  run: |
+      #    gcloud run services describe ${{ secrets.APPLICATION }} \
+      #      --region asia-southeast2 \
+      #      --format='yaml(status)'
 
-      - name: Debug - Check recent logs
-        if: failure()
-        run: |
-          gcloud run services logs read --service=${{ secrets.APPLICATION }} \
-            --region=asia-southeast2
+      #- name: Debug - Check recent logs
+      #  if: failure()
+      #  run: |
+      #    gcloud run services logs read --service=${{ secrets.APPLICATION }} \
+      #      --region=asia-southeast2
 
 
 #name: video-conference
