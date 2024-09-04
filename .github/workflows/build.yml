@@ -58,12 +58,19 @@ jobs:
 
       - name: Configure Docker Authorization
         run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev --quiet
-
-      - name: Build Docker Image
-        run: |
-            echo "Building image: $IMAGE_NAME"
-            docker buildx build --platform linux/amd64,linux/arm64 -t $IMAGE_NAME .
-            #docker build -t $IMAGE_NAME .
+        
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ env.IMAGE_NAME }}
+      #- name: Build Docker Image
+      #  run: |
+      #      echo "Building image: $IMAGE_NAME"
+      #      docker buildx build --platform linux/amd64,linux/arm64 -t $IMAGE_NAME .
+      #      #docker build -t $IMAGE_NAME .
 
       - name: Push Docker Image to Artifact Registry
         run: docker push $IMAGE_NAME
