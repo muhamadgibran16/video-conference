@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     env:
       IMAGE_NAME: asia-southeast2-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/${{ secrets.APPLICATION }}:latest
-      DB_IMAGE_NAME: gcr.io/${{ secrets.GCP_PROJECT_ID }}/mongo
       GCP_APP_NAME: ${{ secrets.APPLICATION }}
       GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
       CREDENTIALS: ${{ secrets.GOOGLE_APPLICATION_CREDENTIALS }}
@@ -57,8 +56,10 @@ jobs:
         run: gcloud auth configure-docker asia-southeast2-docker.pkg.dev --quiet
 
       - name: Build Docker Image
-        run: docker buildx build --platform linux/amd64,linux/arm64 -t $IMAGE_NAME .
-        #run: docker build -t $IMAGE_NAME .
+        #run: docker buildx build --platform linux/amd64,linux/arm64 -t $IMAGE_NAME .
+        run: |
+            echo "Building image: $IMAGE_NAME"
+            docker build -t $IMAGE_NAME .
 
       - name: Push Docker Image to Artifact Registry
         run: docker push $IMAGE_NAME
