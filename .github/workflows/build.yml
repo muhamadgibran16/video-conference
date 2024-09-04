@@ -78,7 +78,7 @@ jobs:
             --region asia-southeast2 \
             --platform managed \
             --allow-unauthenticated \
-            --port 5000 \
+            --port 888 \
             --env-vars-file env_vars.yaml \
             --verbosity=debug
 
